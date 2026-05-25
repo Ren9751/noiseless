@@ -7,6 +7,7 @@ export interface TimelineArticle {
   id: string;
   url: string;
   title: string;
+  title_ja: string | null;
   summary: string | null;
   score_reason: string | null;
   prompt_score: number;
@@ -38,6 +39,7 @@ export async function getTimelineArticles(
       prompt_score,
       final_score,
       score_reason,
+      title_ja,
       article:articles!inner (
         id,
         url,
@@ -72,6 +74,7 @@ export async function getTimelineArticles(
       id: article.id,
       url: article.url,
       title: article.title,
+      title_ja: (r as { title_ja: string | null }).title_ja,
       summary: article.summary,
       score_reason: r.score_reason,
       prompt_score: r.prompt_score,

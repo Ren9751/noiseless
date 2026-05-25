@@ -27,6 +27,7 @@ export interface ArticleWithBody extends RawEntry {
 // スコアリング結果
 export interface ScoringResult {
   prompt_score: number;
+  title_ja: string;
   summary: string;
   score_reason: string;
 }

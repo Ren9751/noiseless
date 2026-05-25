@@ -4,6 +4,7 @@ import type { ArticleWithBody, ScoringResult } from "./types";
 
 const SCORING_SCHEMA = z.object({
   prompt_score: z.number().int().min(1).max(10),
+  title_ja: z.string(),
   summary: z.string(),
   score_reason: z.string(),
 });
@@ -19,7 +20,7 @@ function buildPrompt(profile: UserProfile): string {
     .join("\n");
 
   return `あなたは「自分専用ニュースタイムライン」のキュレーターです。
-記事を以下のユーザープロフィールに照らしてスコアリングし、X (旧Twitter) の投稿1個分の本文を生成してください。
+記事を以下のユーザープロフィールに照らしてスコアリングし、日本語タイトルと X (旧Twitter) の投稿1個分の本文を生成してください。
 
 ## ユーザーの興味分野
 ${interestsList}
@@ -32,6 +33,12 @@ ${profile.special_rules || "（なし）"}
 - 内容が薄い速報は -1
 - 複数の興味分野にまたがる記事は +1
 - 全く関係ない内容は 1-3
+
+## title_ja の要件
+- 25〜60字程度の自然な日本語タイトル
+- 原文タイトルが既に日本語ならそのまま使う
+- 原文が英語等なら、内容に即した日本語タイトルに意訳する（直訳ではなく自然な日本語）
+- 終止符不要、煽り・絵文字禁止
 
 ## X風本文 (summary) の要件
 - 140〜280字
@@ -48,6 +55,7 @@ ${profile.special_rules || "（なし）"}
 ## 出力形式（JSON）
 {
   "prompt_score": 数値,
+  "title_ja": "日本語タイトル",
   "summary": "X風本文",
   "score_reason": "短い理由"
 }`;
@@ -66,12 +74,10 @@ export async function scoreArticle(
     messages: [{ role: "user", content: userMessage }],
   });
 
-  // assistant の応答テキストを取り出す
   const content = response.content[0];
   if (content.type !== "text") throw new Error("unexpected response type");
   const text = content.text;
 
-  // JSON ブロックを抽出
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("no JSON in response: " + text);
 

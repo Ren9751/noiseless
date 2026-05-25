@@ -17,8 +17,13 @@ export function ArticleCard({ article }: { article: TimelineArticle }) {
         rel="noopener noreferrer"
         className="text-base font-semibold leading-snug hover:underline"
       >
-        {article.title}
+        {article.title_ja ?? article.title}
       </a>
+      {article.title_ja && article.title_ja !== article.title && (
+        <p className="text-xs text-muted-foreground line-clamp-2">
+          原題: {article.title}
+        </p>
+      )}
 
       {article.summary && (
         <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">

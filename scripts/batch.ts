@@ -137,6 +137,7 @@ async function main() {
       similarity_score: 0,
       final_score: article.scoring.prompt_score,
       score_reason: article.scoring.score_reason,
+      title_ja: article.scoring.title_ja,
       is_serendipity: false,
     });
     if (scoreErr) {
