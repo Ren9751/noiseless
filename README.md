@@ -4,10 +4,12 @@
 
 ## ステータス
 
-Phase 1 (MVP) 実装中。
+Phase 1 (MVP) 完了。
 
 - ✅ Plan A: バックエンド基盤（バッチ処理 + DB）
-- ⬜ Plan B: フロントエンド（タイムライン、いいね、設定 UI）
+- ✅ Plan B: フロントエンド（タイムライン、いいね、設定 UI）
+- ⬜ GitHub Actions の本番有効化（リポジトリ作成 + Secrets 設定）
+- ⬜ Vercel デプロイ
 
 ## アーキテクチャ
 
@@ -76,7 +78,15 @@ GitHub リポジトリの Settings → Secrets and variables → Actions に以�
 
 ```
 noiseless/
-├── app/                   # Next.js App Router (Plan B で実装)
+├── app/
+│   ├── lib/               # サーバー側データアクセス + Server Actions
+│   ├── components/        # UI コンポーネント (Server / Client)
+│   ├── settings/          # 設定画面
+│   ├── page.tsx           # タイムライン
+│   ├── layout.tsx         # ルートレイアウト (Nav)
+│   └── error.tsx          # エラー境界
+├── components/ui/         # shadcn/ui コンポーネント
+├── lib/utils.ts           # cn ヘルパー
 ├── scripts/
 │   ├── batch.ts           # バッチエントリポイント
 │   ├── seed.ts            # 初期データ投入
@@ -88,7 +98,16 @@ noiseless/
 └── .github/workflows/     # GitHub Actions
 ```
 
+## 開発サーバー
+
+```bash
+npm run dev
+```
+
+`http://localhost:3000` でタイムライン、`http://localhost:3000/settings` で設定画面。
+
 ## 設計ドキュメント
 
 - 設計書: `docs/superpowers/specs/2026-05-18-noiseless-design.md`
 - Plan A (バックエンド): `docs/superpowers/plans/2026-05-18-plan-a-backend.md`
+- Plan B (フロントエンド): `docs/superpowers/plans/2026-05-25-plan-b-frontend.md`

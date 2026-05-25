@@ -48,7 +48,9 @@ export function InterestEditor({ initial }: { initial: Interest[] }) {
           <div className="flex items-center gap-2 w-48">
             <Slider
               value={[it.weight]}
-              onValueChange={(v) => update(i, { weight: v[0] })}
+              onValueChange={(v) =>
+                update(i, { weight: Array.isArray(v) ? v[0] : v })
+              }
               min={1}
               max={10}
               step={1}

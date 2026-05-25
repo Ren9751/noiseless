@@ -17,6 +17,16 @@ export interface TimelineArticle {
   liked: boolean;
 }
 
+type ArticleRow = {
+  id: string;
+  url: string;
+  title: string;
+  summary: string | null;
+  raw_metadata: Record<string, unknown> | null;
+  fetched_at: string;
+  source: { kind: string };
+};
+
 export async function getTimelineArticles(
   userId: string,
   limit = 50,
@@ -45,7 +55,7 @@ export async function getTimelineArticles(
     .limit(limit);
   if (error) throw error;
 
-  const articleIds = (rows ?? []).map((r) => (r.article as any).id);
+  const articleIds = (rows ?? []).map((r) => (r.article as unknown as ArticleRow).id);
   const { data: likes } = await supabaseServer
     .from("likes")
     .select("article_id")
@@ -57,7 +67,7 @@ export async function getTimelineArticles(
   const likedIds = new Set((likes ?? []).map((l) => l.article_id as string));
 
   return (rows ?? []).map((r): TimelineArticle => {
-    const article = r.article as any;
+    const article = r.article as unknown as ArticleRow;
     return {
       id: article.id,
       url: article.url,
