@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# noiseless
 
-## Getting Started
+自分の関心に最適化されたタイムライン型 Web アプリ。「ノイズのない X」をコンセプトとした自分専用情報源。
 
-First, run the development server:
+## ステータス
+
+Phase 1 (MVP) 実装中。
+
+- ✅ Plan A: バックエンド基盤（バッチ処理 + DB）
+- ⬜ Plan B: フロントエンド（タイムライン、いいね、設定 UI）
+
+## アーキテクチャ
+
+- **バッチ処理**: GitHub Actions で 1 日 2 回 (06:00 / 21:00 JST)、TypeScript (`tsx`) で実行
+- **DB**: Supabase (PostgreSQL + pgvector)
+- **LLM**: Claude Haiku (`claude-haiku-4-5-20251001`)
+- **フロント**: Next.js 16 (App Router) on Vercel
+
+## セットアップ
+
+### 1. 依存インストール
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. 環境変数
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`.env.example` を `.env.local` にコピーして値を埋める:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+ANTHROPIC_API_KEY=sk-ant-...
+```
 
-## Learn More
+### 3. Supabase スキーマ適用
 
-To learn more about Next.js, take a look at the following resources:
+`supabase/migrations/` 内の SQL を、ファイル名の昇順で Supabase ダッシュボードの SQL Editor で実行する。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4. シードデータ投入
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run seed
+```
 
-## Deploy on Vercel
+固定ユーザー、興味プロフィール、3 ソース (はてブ・HN・arXiv) が投入される。
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 5. バッチを手動実行
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run batch
+```
+
+実際に外部 API を叩き、Claude Haiku で課金が発生する。1 回あたり $0.30〜0.50 程度。
+
+## テスト
+
+```bash
+npm test
+```
+
+`scripts/lib/dedup.ts` と各 fetcher のパース部分にユニットテストがある。HTTP・LLM 呼び出しは対象外（バッチ実行で確認）。
+
+## GitHub Actions
+
+`.github/workflows/batch.yml` で 1 日 2 回 (06:00 / 21:00 JST) 自動実行される。
+
+GitHub リポジトリの Settings → Secrets and variables → Actions に以下を設定する:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `ANTHROPIC_API_KEY`
+
+## ディレクトリ構成
+
+```
+noiseless/
+├── app/                   # Next.js App Router (Plan B で実装)
+├── scripts/
+│   ├── batch.ts           # バッチエントリポイント
+│   ├── seed.ts            # 初期データ投入
+│   ├── fetchers/          # ソース別 fetcher
+│   └── lib/               # 共通ロジック (scoring, readability, etc.)
+├── supabase/
+│   └── migrations/        # スキーマ + GRANT
+├── tests/                 # vitest テスト
+└── .github/workflows/     # GitHub Actions
+```
+
+## 設計ドキュメント
+
+- 設計書: `docs/superpowers/specs/2026-05-18-noiseless-design.md`
+- Plan A (バックエンド): `docs/superpowers/plans/2026-05-18-plan-a-backend.md`

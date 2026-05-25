@@ -1,0 +1,26 @@
+name: noiseless batch
+
+on:
+  schedule:
+    # 21:00 JST = 12:00 UTC
+    - cron: '0 12 * * *'
+    # 06:00 JST = 21:00 UTC (前日)
+    - cron: '0 21 * * *'
+  workflow_dispatch:
+
+jobs:
+  batch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run batch
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: npx tsx scripts/batch.ts
