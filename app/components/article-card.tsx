@@ -31,12 +31,6 @@ export function ArticleCard({ article }: { article: TimelineArticle }) {
         </p>
       )}
 
-      {article.score_reason && (
-        <p className="text-xs text-muted-foreground italic">
-          評価: {article.score_reason}
-        </p>
-      )}
-
       <div className="flex items-center justify-between pt-1">
         <LikeButton articleId={article.id} initiallyLiked={article.liked} />
         <a
