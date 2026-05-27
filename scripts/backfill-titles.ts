@@ -29,7 +29,7 @@ async function main() {
   let translated = 0;
   let copied = 0;
   for (const r of rows ?? []) {
-    const title = (r.article as { title: string }).title;
+    const title = (r.article as unknown as { title: string }).title;
     let title_ja: string;
     if (hasJapanese(title)) {
       title_ja = title;
