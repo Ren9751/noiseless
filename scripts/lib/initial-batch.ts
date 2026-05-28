@@ -12,7 +12,9 @@ import {
 } from "./initial-batch-utils";
 import type { ArticleWithBody, RawEntry, ScoredArticle, SourceRow } from "./types";
 
-const SCORE_THRESHOLD = 6;
+// 本文なしで採点する初回バッチは点が辛めに出るので、通常バッチより低い合格ラインにする
+// （呼び水として数件を埋め、質は定時バッチが後から底上げする）
+const SCORE_THRESHOLD = 4;
 const CONCURRENCY = 8;
 // Anthropic のレート枠（出力1万トークン/分）に収まるよう採点する候補数を絞る。
 // CANDIDATE_LIMIT × max_tokens(1024) が 1万を超えないこと。
