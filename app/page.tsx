@@ -1,9 +1,17 @@
+import { redirect } from "next/navigation";
 import { getTimelineArticles } from "./lib/articles";
+import { getProfile } from "./lib/profile";
+import { isOnboarded } from "./lib/onboarding-gate";
 import { ArticleCard } from "./components/article-card";
 
 const FIXED_USER_ID = "00000000-0000-0000-0000-000000000001";
 
 export default async function TimelinePage() {
+  const profile = await getProfile(FIXED_USER_ID);
+  if (!isOnboarded(profile.onboarded_at)) {
+    redirect("/onboarding");
+  }
+
   const articles = await getTimelineArticles(FIXED_USER_ID, 50);
 
   if (articles.length === 0) {

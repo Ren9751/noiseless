@@ -101,6 +101,7 @@ async function main() {
       const scoring = await scoreArticle(entry, {
         interests: profile.interests,
         special_rules: profile.special_rules,
+        it_level: profile.it_level ?? null,
       });
       if (scoring.prompt_score >= SCORE_THRESHOLD) {
         scored.push({ ...entry, scoring });

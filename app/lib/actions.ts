@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "./supabase-server";
 import type { Interest } from "./profile";
+import { validateOnboardingInput } from "./onboarding-validation";
 
 const FIXED_USER_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -44,6 +45,25 @@ export async function updateSpecialRules(specialRules: string): Promise<void> {
   const { error } = await supabaseServer
     .from("user_profile")
     .update({ special_rules: specialRules, updated_at: new Date().toISOString() })
+    .eq("user_id", FIXED_USER_ID);
+  if (error) throw error;
+  revalidatePath("/");
+}
+
+export async function completeOnboarding(
+  interests: Interest[],
+  itLevel: number,
+): Promise<void> {
+  validateOnboardingInput(interests, itLevel);
+  const now = new Date().toISOString();
+  const { error } = await supabaseServer
+    .from("user_profile")
+    .update({
+      interests,
+      it_level: itLevel,
+      onboarded_at: now,
+      updated_at: now,
+    })
     .eq("user_id", FIXED_USER_ID);
   if (error) throw error;
   revalidatePath("/");

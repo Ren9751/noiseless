@@ -10,21 +10,9 @@ async function main() {
   if (userError) throw userError;
   console.log("user:", user);
 
-  // user_profile を upsert
-  const interests = [
-    { topic: "AI/LLM", weight: 10 },
-    { topic: "Claude / Anthropic", weight: 10 },
-    { topic: "プログラミング (Python, Web)", weight: 9 },
-    { topic: "AI Safety", weight: 9 },
-    { topic: "民主主義とテクノロジー", weight: 9 },
-    { topic: "オープンソース", weight: 8 },
-    { topic: "発達障害・特性", weight: 7 },
-    { topic: "CS基礎 (アルゴリズム、数学)", weight: 7 },
-    { topic: "セキュリティ", weight: 7 },
-    { topic: "投資・金融", weight: 5 },
-  ];
-  const specialRules =
-    "Claude Code に関する記事は必ずスコア 9 以上にする。芸能・エンタメ系のゴシップはスコア 1 にする。";
+  // user_profile を upsert（オンボーディング前のまっさら状態）
+  const interests: { topic: string; weight: number }[] = [];
+  const specialRules = "";
 
   const { error: profileError } = await supabase
     .from("user_profile")
@@ -32,9 +20,11 @@ async function main() {
       user_id: user.id,
       interests,
       special_rules: specialRules,
+      it_level: null,
+      onboarded_at: null,
     });
   if (profileError) throw profileError;
-  console.log("profile updated");
+  console.log("profile reset to pre-onboarding state");
 
   // 初期 sources
   const sources = [
