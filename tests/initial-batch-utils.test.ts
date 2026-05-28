@@ -3,6 +3,7 @@ import {
   buildScoringText,
   capByScore,
   mapWithConcurrency,
+  interleaveBySource,
 } from "../scripts/lib/initial-batch-utils";
 import type { RawEntry } from "../scripts/lib/types";
 
@@ -56,5 +57,27 @@ describe("mapWithConcurrency", () => {
       return null;
     });
     expect(maxActive).toBeLessThanOrEqual(2);
+  });
+});
+
+describe("interleaveBySource", () => {
+  it("ソースを交互に拾い、limitで打ち切る", () => {
+    const e = (source_id: string, url: string) => ({ source_id, url });
+    const entries = [
+      e("hn", "a"),
+      e("hn", "b"),
+      e("hn", "c"),
+      e("ht", "x"),
+      e("ht", "y"),
+    ];
+    const out = interleaveBySource(entries, 4);
+    expect(out.map((x) => x.url)).toEqual(["a", "x", "b", "y"]);
+  });
+  it("limitが全件以上なら全部返す", () => {
+    const entries = [
+      { source_id: "a", url: "1" },
+      { source_id: "b", url: "2" },
+    ];
+    expect(interleaveBySource(entries, 10)).toHaveLength(2);
   });
 });

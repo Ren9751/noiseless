@@ -35,3 +35,26 @@ export async function mapWithConcurrency<T, R>(
   await Promise.all(Array.from({ length: workerCount }, () => worker()));
   return results;
 }
+
+// ソースを交互に拾って limit 件に絞る（特定ソースに偏らせない）。
+export function interleaveBySource<T extends { source_id: string }>(
+  entries: T[],
+  limit: number,
+): T[] {
+  const groups = new Map<string, T[]>();
+  for (const e of entries) {
+    const arr = groups.get(e.source_id);
+    if (arr) arr.push(e);
+    else groups.set(e.source_id, [e]);
+  }
+  const queues = Array.from(groups.values());
+  const result: T[] = [];
+  let i = 0;
+  while (result.length < limit && queues.some((q) => q.length > 0)) {
+    const q = queues[i % queues.length];
+    const item = q.shift();
+    if (item) result.push(item);
+    i++;
+  }
+  return result;
+}

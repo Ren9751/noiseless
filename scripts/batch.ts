@@ -4,7 +4,7 @@ import { extractBody } from "./lib/readability";
 import { scoreArticle } from "./lib/scoring";
 import { fetchHatena } from "./fetchers/hatena";
 import { fetchHackerNews } from "./fetchers/hackernews";
-import { fetchArxiv } from "./fetchers/arxiv";
+import { fetchArxiv, DEFAULT_ARXIV_CATEGORIES } from "./fetchers/arxiv";
 import type {
   ArticleWithBody,
   RawEntry,
@@ -25,7 +25,7 @@ async function fetchAllSources(sources: SourceRow[]): Promise<RawEntry[]> {
         case "arxiv":
           return await fetchArxiv(
             s.id,
-            (s.config as { category: string }).category ?? "cs.CY",
+            (s.config as { categories?: string[] }).categories ?? DEFAULT_ARXIV_CATEGORIES,
           );
         default:
           console.warn(`unsupported source kind: ${s.kind}`);

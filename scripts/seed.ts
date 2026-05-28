@@ -30,7 +30,7 @@ async function main() {
   const sources = [
     { user_id: user.id, kind: "hatena", config: {}, enabled: true },
     { user_id: user.id, kind: "hackernews", config: {}, enabled: true },
-    { user_id: user.id, kind: "arxiv", config: { category: "cs.CY" }, enabled: true },
+    { user_id: user.id, kind: "arxiv", config: { categories: ["cs.CY", "cs.AI"] }, enabled: true },
   ];
   // 既存と重複しないよう、kind 単位で upsert する代わりに、まず削除して入れ直す
   await supabase.from("sources").delete().eq("user_id", user.id);

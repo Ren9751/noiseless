@@ -3,12 +3,20 @@ import { dedupeByUrl } from "./dedup";
 import { scoreArticle } from "./scoring";
 import { fetchHatena } from "../fetchers/hatena";
 import { fetchHackerNews } from "../fetchers/hackernews";
-import { fetchArxiv } from "../fetchers/arxiv";
-import { buildScoringText, capByScore, mapWithConcurrency } from "./initial-batch-utils";
+import { fetchArxiv, DEFAULT_ARXIV_CATEGORIES } from "../fetchers/arxiv";
+import {
+  buildScoringText,
+  capByScore,
+  interleaveBySource,
+  mapWithConcurrency,
+} from "./initial-batch-utils";
 import type { ArticleWithBody, RawEntry, ScoredArticle, SourceRow } from "./types";
 
 const SCORE_THRESHOLD = 6;
 const CONCURRENCY = 8;
+// Anthropic のレート枠（出力1万トークン/分）に収まるよう採点する候補数を絞る。
+// CANDIDATE_LIMIT × max_tokens(1024) が 1万を超えないこと。
+const CANDIDATE_LIMIT = 8;
 
 async function fetchAllSources(sources: SourceRow[]): Promise<RawEntry[]> {
   const tasks = sources.map(async (s) => {
@@ -21,7 +29,7 @@ async function fetchAllSources(sources: SourceRow[]): Promise<RawEntry[]> {
         case "arxiv":
           return await fetchArxiv(
             s.id,
-            (s.config as { category?: string }).category ?? "cs.CY",
+            (s.config as { categories?: string[] }).categories ?? DEFAULT_ARXIV_CATEGORIES,
           );
         default:
           return [];
@@ -67,9 +75,14 @@ export async function runInitialBatch({
 
   const raw = await fetchAllSources(sources as SourceRow[]);
   const fresh = await filterNewUrls(dedupeByUrl(raw));
+  // レート制限内に収めるため、ソースを交互に拾って候補を絞る
+  const candidates = interleaveBySource(fresh, CANDIDATE_LIMIT);
+  console.log(
+    `[initial-batch] fetched=${raw.length} fresh=${fresh.length} candidates=${candidates.length}`,
+  );
 
   // 本文取得はしない: 採点テキストは body_hint ?? title
-  const withBody: ArticleWithBody[] = fresh.map((e) => ({
+  const withBody: ArticleWithBody[] = candidates.map((e) => ({
     ...e,
     body_excerpt: buildScoringText(e),
   }));
@@ -94,7 +107,9 @@ export async function runInitialBatch({
     .filter((r): r is NonNullable<typeof r> => r !== null && r.scoring.prompt_score >= SCORE_THRESHOLD)
     .map((r) => ({ ...r.entry, scoring: r.scoring }));
 
+  console.log(`[initial-batch] passedThreshold=${scored.length}`);
   const top = capByScore(scored, limit);
+  console.log(`[initial-batch] willSave=${top.length}`);
 
   for (const article of top) {
     const { data: inserted, error: insErr } = await supabase

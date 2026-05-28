@@ -21,11 +21,18 @@ export function parseArxivAtom(xml: string, sourceId: string): RawEntry[] {
   });
 }
 
-export async function fetchArxiv(sourceId: string, category: string): Promise<RawEntry[]> {
-  const url = `https://export.arxiv.org/api/query?search_query=cat:${encodeURIComponent(
-    category,
-  )}&sortBy=submittedDate&sortOrder=descending&max_results=30`;
-  const res = await fetch(url);
+export const DEFAULT_ARXIV_CATEGORIES = ["cs.CY", "cs.AI"];
+
+export async function fetchArxiv(
+  sourceId: string,
+  categories: string[],
+): Promise<RawEntry[]> {
+  const query = categories.map((c) => `cat:${c}`).join("+OR+");
+  const url = `https://export.arxiv.org/api/query?search_query=${query}&sortBy=submittedDate&sortOrder=descending&max_results=30`;
+  // arxiv は無記名リクエストを 429 で弾きやすいので、自分を名乗る
+  const res = await fetch(url, {
+    headers: { "User-Agent": "noiseless/1.0 (https://noiseless-black.vercel.app)" },
+  });
   if (!res.ok) throw new Error(`arxiv fetch failed: ${res.status}`);
   const xml = await res.text();
   return parseArxivAtom(xml, sourceId);

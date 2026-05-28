@@ -24,7 +24,7 @@ export function parseHatenaRss(xml: string, sourceId: string): RawEntry[] {
 }
 
 export async function fetchHatena(sourceId: string): Promise<RawEntry[]> {
-  const res = await fetch("https://b.hatena.ne.jp/hotentry.rss");
+  const res = await fetch("https://b.hatena.ne.jp/hotentry/it.rss");
   if (!res.ok) throw new Error(`hatena fetch failed: ${res.status}`);
   const xml = await res.text();
   return parseHatenaRss(xml, sourceId);
