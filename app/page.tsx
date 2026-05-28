@@ -3,6 +3,7 @@ import { getTimelineArticles } from "./lib/articles";
 import { getProfile } from "./lib/profile";
 import { isOnboarded } from "./lib/onboarding-gate";
 import { ArticleCard } from "./components/article-card";
+import { PreparingFeed } from "./components/preparing-feed";
 
 const FIXED_USER_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -15,11 +16,7 @@ export default async function TimelinePage() {
   const articles = await getTimelineArticles(FIXED_USER_ID, 50);
 
   if (articles.length === 0) {
-    return (
-      <div className="p-8 text-center text-muted-foreground">
-        まだ記事がありません。バッチを実行して記事を取り込んでください。
-      </div>
-    );
+    return <PreparingFeed />;
   }
 
   return (

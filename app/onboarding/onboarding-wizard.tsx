@@ -39,6 +39,8 @@ export function OnboardingWizard() {
     startTransition(async () => {
       try {
         await completeOnboarding(interests, chosenLevel);
+        // 初回フィードを裏で取得開始（投げっぱなし。画面遷移しても keepalive で継続）
+        fetch("/api/initial-batch", { method: "POST", keepalive: true }).catch(() => {});
         router.push("/");
       } catch (e) {
         setError(e instanceof Error ? e.message : "保存に失敗しました");
