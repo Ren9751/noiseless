@@ -1,10 +1,11 @@
 import { supabase } from "./lib/supabase";
 import { dedupeByUrl } from "./lib/dedup";
-import { extractBody } from "./lib/readability";
+import { buildScoringText } from "./lib/initial-batch-utils";
 import { scoreArticle } from "./lib/scoring";
 import { fetchHatena } from "./fetchers/hatena";
 import { fetchHackerNews } from "./fetchers/hackernews";
 import { fetchArxiv, DEFAULT_ARXIV_CATEGORIES } from "./fetchers/arxiv";
+import { fetchRss } from "./fetchers/rss";
 import type {
   ArticleWithBody,
   RawEntry,
@@ -27,6 +28,8 @@ async function fetchAllSources(sources: SourceRow[]): Promise<RawEntry[]> {
             s.id,
             (s.config as { categories?: string[] }).categories ?? DEFAULT_ARXIV_CATEGORIES,
           );
+        case "rss":
+          return await fetchRss(s.id, (s.config as { url: string }).url);
         default:
           console.warn(`unsupported source kind: ${s.kind}`);
           return [];
@@ -48,14 +51,9 @@ async function filterNewEntries(entries: RawEntry[]): Promise<RawEntry[]> {
   return entries.filter((e) => !existing.has(e.url));
 }
 
-async function attachBody(entry: RawEntry): Promise<ArticleWithBody | null> {
-  // body_hint があるソース (arxiv, RSS) はそれを優先
-  if (entry.body_hint && entry.body_hint.length > 200) {
-    return { ...entry, body_excerpt: entry.body_hint };
-  }
-  const body = await extractBody(entry.url);
-  if (!body) return null;
-  return { ...entry, body_excerpt: body };
+// 本文スクレイプはしない。フィード提供分があればそれ、無ければタイトルで採点する。
+function attachBody(entry: RawEntry): ArticleWithBody {
+  return { ...entry, body_excerpt: buildScoringText(entry) };
 }
 
 async function main() {
@@ -86,13 +84,9 @@ async function main() {
   const newEntries = await filterNewEntries(deduped);
   console.log(`${newEntries.length} new entries after dedup`);
 
-  // 3. 本文取得 (失敗は捨てる)
-  const withBody: ArticleWithBody[] = [];
-  for (const entry of newEntries) {
-    const enriched = await attachBody(entry);
-    if (enriched) withBody.push(enriched);
-  }
-  console.log(`${withBody.length} entries with body`);
+  // 3. 採点テキストを用意（本文スクレイプはしない。記事は捨てない）
+  const withBody: ArticleWithBody[] = newEntries.map(attachBody);
+  console.log(`${withBody.length} entries ready for scoring`);
 
   // 4. スコアリング (閾値未満は捨てる)
   const scored: ScoredArticle[] = [];
@@ -124,6 +118,7 @@ async function main() {
         summary: article.scoring.summary,
         raw_metadata: article.raw_metadata,
         published_at: article.published_at,
+        image_url: article.image_url ?? null,
       })
       .select("id")
       .single();
