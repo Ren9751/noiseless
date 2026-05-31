@@ -12,6 +12,7 @@ const SAMPLE_RSS = `<?xml version="1.0" encoding="UTF-8"?>
     <description>記事の説明文</description>
     <dc:date>2026-05-18T06:00:00+09:00</dc:date>
     <hatena:bookmarkcount>123</hatena:bookmarkcount>
+    <hatena:imageurl>https://example.com/hatena-a.jpg</hatena:imageurl>
   </item>
   <item rdf:about="https://example.com/article2">
     <title>テスト記事2</title>
@@ -35,5 +36,11 @@ describe("parseHatenaRss", () => {
   it("source_id を全エントリに付ける", () => {
     const entries = parseHatenaRss(SAMPLE_RSS, "src-X");
     expect(entries.every((e) => e.source_id === "src-X")).toBe(true);
+  });
+
+  it("hatena:imageurl があれば image_url に入れる", () => {
+    const entries = parseHatenaRss(SAMPLE_RSS, "source-id-1");
+    expect(entries[0].image_url).toBe("https://example.com/hatena-a.jpg");
+    expect(entries[1].image_url).toBeNull();
   });
 });
