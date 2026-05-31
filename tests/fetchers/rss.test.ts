@@ -88,3 +88,21 @@ describe("parseRssFeed (Atom)", () => {
     expect(entries[0].body_hint).not.toContain("<");
   });
 });
+
+describe("parseRssFeed (本文HTMLからの画像)", () => {
+  const FEED_WITH_BODY_IMG = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <item>
+      <title>本文に画像</title>
+      <link>https://example.com/x</link>
+      <description><![CDATA[<p>説明文 <img src="https://example.com/in-body.jpg" alt="x"> 続き</p>]]></description>
+    </item>
+  </channel>
+</rss>`;
+
+  it("専用タグが無ければ本文の最初の<img>を image_url に使う", () => {
+    const entries = parseRssFeed(FEED_WITH_BODY_IMG, "src");
+    expect(entries[0].image_url).toBe("https://example.com/in-body.jpg");
+  });
+});

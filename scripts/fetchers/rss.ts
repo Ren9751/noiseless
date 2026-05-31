@@ -26,6 +26,13 @@ function pickImage(item: Element): string | null {
   return null;
 }
 
+// 専用タグが無い場合、フィードが配信した本文HTMLの最初の <img> を使う。
+// （任意ページのスクレイプではなく、発行元がフィードに載せた画像なので link-out 方針に沿う）
+function imageFromHtml(html: string): string | null {
+  const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return m ? m[1] : null;
+}
+
 export function parseRssFeed(
   xml: string,
   sourceId: string,
@@ -54,7 +61,7 @@ export function parseRssFeed(
         raw_metadata: {},
         published_at: date,
         body_hint: stripHtml(body),
-        image_url: pickImage(item),
+        image_url: pickImage(item) ?? imageFromHtml(body),
       };
     });
   }
@@ -83,7 +90,7 @@ export function parseRssFeed(
       raw_metadata: {},
       published_at: date,
       body_hint: stripHtml(body),
-      image_url: pickImage(entry),
+      image_url: pickImage(entry) ?? imageFromHtml(body),
     };
   });
 }
