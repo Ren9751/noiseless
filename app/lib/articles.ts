@@ -13,6 +13,8 @@ export interface TimelineArticle {
   prompt_score: number;
   final_score: number;
   source_kind: string;
+  source_name: string | null;
+  image_url: string | null;
   raw_metadata: Record<string, unknown>;
   fetched_at: string;
   liked: boolean;
@@ -23,9 +25,10 @@ type ArticleRow = {
   url: string;
   title: string;
   summary: string | null;
+  image_url: string | null;
   raw_metadata: Record<string, unknown> | null;
   fetched_at: string;
-  source: { kind: string };
+  source: { kind: string; config: Record<string, unknown> | null };
 };
 
 export async function getTimelineArticles(
@@ -45,9 +48,10 @@ export async function getTimelineArticles(
         url,
         title,
         summary,
+        image_url,
         raw_metadata,
         fetched_at,
-        source:sources!inner ( kind )
+        source:sources!inner ( kind, config )
       )
     `,
     )
@@ -80,6 +84,9 @@ export async function getTimelineArticles(
       prompt_score: r.prompt_score,
       final_score: r.final_score,
       source_kind: article.source.kind,
+      source_name:
+        (article.source.config as { name?: string } | null)?.name ?? null,
+      image_url: article.image_url,
       raw_metadata: article.raw_metadata ?? {},
       fetched_at: article.fetched_at,
       liked: likedIds.has(article.id),
