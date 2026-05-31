@@ -3,7 +3,8 @@ import type { RawEntry } from "../lib/types";
 interface AlgoliaHit {
   objectID: string;
   title: string;
-  url: string | null;
+  // Ask HN / Show HN(テキスト投稿) は url キー自体が無い(undefined)ことがある
+  url?: string | null;
   points: number;
   num_comments: number;
   created_at: string;
@@ -15,7 +16,7 @@ interface AlgoliaResponse {
 
 export function parseAlgoliaResponse(json: AlgoliaResponse, sourceId: string): RawEntry[] {
   return json.hits
-    .filter((hit) => hit.url !== null && hit.url !== "")
+    .filter((hit) => Boolean(hit.url))
     .map((hit): RawEntry => ({
       source_id: sourceId,
       url: hit.url as string,

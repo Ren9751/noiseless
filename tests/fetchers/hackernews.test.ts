@@ -19,11 +19,18 @@ const SAMPLE = {
       num_comments: 30,
       created_at: "2026-05-18T02:30:00Z",
     },
+    {
+      objectID: "12347",
+      title: "Show HN: my text post",
+      points: 5,
+      num_comments: 1,
+      created_at: "2026-05-18T02:00:00Z",
+    },
   ],
 };
 
 describe("parseAlgoliaResponse", () => {
-  it("URL がある hit のみ採用する", () => {
+  it("URL がある hit のみ採用する（url が null / undefined の投稿は除外）", () => {
     const entries = parseAlgoliaResponse(SAMPLE, "src-hn");
     expect(entries).toHaveLength(1);
     expect(entries[0].url).toBe("https://example.com/a");
