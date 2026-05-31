@@ -4,6 +4,7 @@ import { scoreArticle } from "./scoring";
 import { fetchHatena } from "../fetchers/hatena";
 import { fetchHackerNews } from "../fetchers/hackernews";
 import { fetchArxiv, DEFAULT_ARXIV_CATEGORIES } from "../fetchers/arxiv";
+import { fetchRss } from "../fetchers/rss";
 import {
   buildScoringText,
   capByScore,
@@ -33,6 +34,8 @@ async function fetchAllSources(sources: SourceRow[]): Promise<RawEntry[]> {
             s.id,
             (s.config as { categories?: string[] }).categories ?? DEFAULT_ARXIV_CATEGORIES,
           );
+        case "rss":
+          return await fetchRss(s.id, (s.config as { url: string }).url);
         default:
           return [];
       }
@@ -124,6 +127,7 @@ export async function runInitialBatch({
         summary: article.scoring.summary,
         raw_metadata: article.raw_metadata,
         published_at: article.published_at,
+        image_url: article.image_url ?? null,
       })
       .select("id")
       .single();

@@ -31,6 +31,16 @@ async function main() {
     { user_id: user.id, kind: "hatena", config: {}, enabled: true },
     { user_id: user.id, kind: "hackernews", config: {}, enabled: true },
     { user_id: user.id, kind: "arxiv", config: { categories: ["cs.CY", "cs.AI"] }, enabled: true },
+    // --- RSS（フィード提供分のみ使用）---
+    { user_id: user.id, kind: "rss", config: { name: "GIGAZINE", url: "https://gigazine.net/news/rss_2.0/" }, enabled: true },
+    { user_id: user.id, kind: "rss", config: { name: "Simon Willison", url: "https://simonwillison.net/atom/everything/" }, enabled: true },
+    { user_id: user.id, kind: "rss", config: { name: "Hugging Face", url: "https://huggingface.co/blog/feed.xml" }, enabled: true },
+    { user_id: user.id, kind: "rss", config: { name: "Import AI", url: "https://importai.substack.com/feed" }, enabled: true },
+    { user_id: user.id, kind: "rss", config: { name: "The Markup", url: "https://themarkup.org/feeds/rss.xml" }, enabled: true },
+    { user_id: user.id, kind: "rss", config: { name: "AI as Normal Technology", url: "https://www.normaltech.ai/feed" }, enabled: true },
+    { user_id: user.id, kind: "rss", config: { name: "MIT Tech Review", url: "https://www.technologyreview.com/feed/" }, enabled: true },
+    { user_id: user.id, kind: "rss", config: { name: "Ars Technica", url: "https://feeds.arstechnica.com/arstechnica/index" }, enabled: true },
+    { user_id: user.id, kind: "rss", config: { name: "The Verge", url: "https://www.theverge.com/rss/index.xml" }, enabled: true },
   ];
   // 既存と重複しないよう、kind 単位で upsert する代わりに、まず削除して入れ直す
   await supabase.from("sources").delete().eq("user_id", user.id);

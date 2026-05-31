@@ -12,6 +12,8 @@ export function parseHatenaRss(xml: string, sourceId: string): RawEntry[] {
     const date = item.getElementsByTagName("dc:date")[0]?.textContent?.trim() ?? null;
     const bookmarkText = item.getElementsByTagName("hatena:bookmarkcount")[0]?.textContent?.trim();
     const bookmarkcount = bookmarkText ? Number(bookmarkText) : 0;
+    const imageUrl =
+      item.getElementsByTagName("hatena:imageurl")[0]?.textContent?.trim() ?? null;
     return {
       source_id: sourceId,
       url,
@@ -19,6 +21,7 @@ export function parseHatenaRss(xml: string, sourceId: string): RawEntry[] {
       raw_metadata: { bookmarkcount, description },
       published_at: date,
       body_hint: description,
+      image_url: imageUrl,
     };
   });
 }

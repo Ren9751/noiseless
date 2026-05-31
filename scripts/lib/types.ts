@@ -17,6 +17,8 @@ export interface RawEntry {
   published_at: string | null;
   // 本文。RSS や arXiv は最初から content を持つことがある。
   body_hint?: string | null;
+  // フィードが提供する画像URL（無ければ undefined）。スクレイプはしない。
+  image_url?: string | null;
 }
 
 // 本文抽出後

@@ -2,8 +2,6 @@ name: noiseless batch
 
 on:
   schedule:
-    # 21:00 JST = 12:00 UTC
-    - cron: '0 12 * * *'
     # 06:00 JST = 21:00 UTC (前日)
     - cron: '0 21 * * *'
   workflow_dispatch:
