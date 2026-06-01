@@ -7,6 +7,10 @@ import { PreparingFeed } from "./components/preparing-feed";
 
 const FIXED_USER_ID = "00000000-0000-0000-0000-000000000001";
 
+// オンボーディングの出し分けは、リクエストごとに最新のプロフィールを見る必要がある。
+// 静的キャッシュされると古い状態で固定されるため、毎回サーバーでレンダリングさせる。
+export const dynamic = "force-dynamic";
+
 export default async function TimelinePage() {
   const profile = await getProfile(FIXED_USER_ID);
   if (!isOnboarded(profile.onboarded_at)) {
