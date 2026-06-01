@@ -10,6 +10,11 @@ const SCORING_SCHEMA = z.object({
   score_reason: z.string(),
 });
 
+// ひらがな・カタカナ・漢字を含むか（= 日本語タイトルとみなす）
+function hasJapanese(text: string): boolean {
+  return /[぀-ヿ㐀-鿿]/.test(text);
+}
+
 export async function scoreArticle(
   article: ArticleWithBody,
   profile: ScoringProfile,
@@ -30,6 +35,12 @@ export async function scoreArticle(
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("no JSON in response: " + text);
 
-  const parsed = JSON.parse(jsonMatch[0]);
-  return SCORING_SCHEMA.parse(parsed);
+  const parsed = SCORING_SCHEMA.parse(JSON.parse(jsonMatch[0]));
+
+  // 原文タイトルが既に日本語なら、意訳せず原文をそのまま使う（翻訳調の違和感を避ける）
+  if (hasJapanese(article.title)) {
+    parsed.title_ja = article.title;
+  }
+
+  return parsed;
 }
