@@ -1,5 +1,5 @@
 import { supabase } from "./lib/supabase";
-import { anthropic, HAIKU_MODEL } from "./lib/llm";
+import { getAnthropic, HAIKU_MODEL } from "./lib/llm";
 
 const SYSTEM_PROMPT = `あなたはニュース記事の要約を作る人です。読者は技術や社会に興味を持つ一般の人で、専門家ではありません。
 記事のタイトルと本文を読んで、X (旧Twitter) の投稿1個分の長さで分かりやすく紹介してください。
@@ -16,7 +16,7 @@ const SYSTEM_PROMPT = `あなたはニュース記事の要約を作る人です
 - 返答は本文のみ。前置きや「要約:」などのラベル不要`;
 
 async function summarize(title: string, body: string): Promise<string> {
-  const response = await anthropic.messages.create({
+  const response = await getAnthropic().messages.create({
     model: HAIKU_MODEL,
     max_tokens: 600,
     system: SYSTEM_PROMPT,

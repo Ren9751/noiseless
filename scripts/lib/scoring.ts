@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { anthropic, HAIKU_MODEL } from "./llm";
+import { getAnthropic, HAIKU_MODEL } from "./llm";
 import { buildPrompt, type ScoringProfile } from "./scoring-prompt";
 import type { ArticleWithBody, ScoringResult } from "./types";
 
@@ -16,7 +16,7 @@ export async function scoreArticle(
 ): Promise<ScoringResult> {
   const userMessage = `タイトル: ${article.title}\n\n本文抜粋:\n${article.body_excerpt}`;
 
-  const response = await anthropic.messages.create({
+  const response = await getAnthropic().messages.create({
     model: HAIKU_MODEL,
     max_tokens: 1024,
     system: buildPrompt(profile),

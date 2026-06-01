@@ -1,12 +1,12 @@
 import { supabase } from "./lib/supabase";
-import { anthropic, HAIKU_MODEL } from "./lib/llm";
+import { getAnthropic, HAIKU_MODEL } from "./lib/llm";
 
 function hasJapanese(text: string): boolean {
   return /[぀-ヿ㐀-鿿]/.test(text);
 }
 
 async function translateTitle(title: string): Promise<string> {
-  const response = await anthropic.messages.create({
+  const response = await getAnthropic().messages.create({
     model: HAIKU_MODEL,
     max_tokens: 200,
     system:
