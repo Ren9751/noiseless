@@ -23,8 +23,21 @@ export default async function TimelinePage() {
     return <PreparingFeed />;
   }
 
+  // 「いつのニュースか」を分かりやすくするため、上部に日付・曜日を表示する。
+  // サーバーの時刻は UTC のことが多いので、JST を明示して計算する。
+  const today = new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  }).format(new Date());
+
   return (
     <main className="max-w-2xl mx-auto p-4 flex flex-col gap-3">
+      <header className="pb-1">
+        <p className="text-sm font-medium text-muted-foreground">{today}</p>
+      </header>
       {articles.map((a) => (
         <ArticleCard key={a.id} article={a} />
       ))}
