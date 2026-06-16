@@ -21,7 +21,8 @@ export function parseArxivAtom(xml: string, sourceId: string): RawEntry[] {
   });
 }
 
-export const DEFAULT_ARXIV_CATEGORIES = ["cs.CY", "cs.AI"];
+// P3 の決定により cs.CY（Computers and Society）のみ。サラッと読める社会・倫理寄りに絞る。
+export const DEFAULT_ARXIV_CATEGORIES = ["cs.CY"];
 
 export async function fetchArxiv(
   sourceId: string,

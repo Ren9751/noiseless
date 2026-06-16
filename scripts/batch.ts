@@ -15,6 +15,10 @@ import type {
 
 const SCORE_THRESHOLD = 6;
 
+// T1: 取得から何日より古い記事を消すか。表示は直近48時間なので、数日ぶんの
+// バッファを持たせて 3 日。いいね済み（ブックマーク）の記事は対象外で残す。
+const RETENTION_DAYS = 3;
+
 async function fetchAllSources(sources: SourceRow[]): Promise<RawEntry[]> {
   const tasks = sources.map(async (s) => {
     try {
@@ -139,6 +143,33 @@ async function main() {
     if (scoreErr) {
       console.error(`article_scores insert failed: ${article.url}`, scoreErr);
     }
+  }
+
+  // 6. 古い記事の掃除（T1）。いいね済みは残す。
+  //    article_scores は articles への ON DELETE CASCADE で自動的に消える。
+  const retentionCutoff = new Date(
+    Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000,
+  ).toISOString();
+  const { data: likedRows, error: likedErr } = await supabase
+    .from("likes")
+    .select("article_id");
+  if (likedErr) throw likedErr;
+  const likedIds = (likedRows ?? []).map((l) => l.article_id as string);
+
+  let deleteQuery = supabase
+    .from("articles")
+    .delete()
+    .lt("fetched_at", retentionCutoff);
+  if (likedIds.length > 0) {
+    deleteQuery = deleteQuery.not("id", "in", `(${likedIds.join(",")})`);
+  }
+  const { data: deleted, error: delErr } = await deleteQuery.select("id");
+  if (delErr) {
+    console.error("cleanup failed:", delErr);
+  } else {
+    console.log(
+      `${deleted?.length ?? 0} old articles deleted (older than ${RETENTION_DAYS}d, liked kept)`,
+    );
   }
 
   console.log("=== noiseless batch done ===");

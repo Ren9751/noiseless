@@ -1,9 +1,14 @@
 import type { RawEntry } from "./types";
 
+// 採点で LLM に送る本文の最大文字数。入力トークン＝コストの主因なので、
+// 採点・要約に十分な長さ（おおむね 800 字）に切り詰める。
+// 全ソース（rss / はてな / arXiv）がこの関数を通るので、ここが唯一の cap。
+const MAX_SCORING_CHARS = 800;
+
 // 本文取得をスキップする初回バッチ用: 採点に使うテキストを決める。
 export function buildScoringText(entry: RawEntry): string {
   const hint = entry.body_hint?.trim();
-  return hint && hint.length > 0 ? hint : entry.title;
+  return hint && hint.length > 0 ? hint.slice(0, MAX_SCORING_CHARS) : entry.title;
 }
 
 // prompt_score 降順で上位 limit 件に切り詰める。

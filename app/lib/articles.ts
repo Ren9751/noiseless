@@ -3,6 +3,12 @@ import { supabaseServer } from "./supabase-server";
 
 export { sortByFinalScore, mergeLikedFlag } from "./article-utils";
 
+// 「今日のニュース」を見せたいので、直近に取得した記事だけを対象にする。
+// これを入れないと、全期間で最高スコアの少数の古い記事がフィード先頭に
+// 居座り続け、毎日同じ顔ぶれになってしまう（新着はほぼ8点で下に埋もれる）。
+// バッチは毎日回るので、48時間あれば直近1〜2回ぶんを安定して拾える。
+const RECENT_WINDOW_HOURS = 48;
+
 export interface TimelineArticle {
   id: string;
   url: string;
@@ -35,6 +41,10 @@ export async function getTimelineArticles(
   userId: string,
   limit = 50,
 ): Promise<TimelineArticle[]> {
+  const cutoff = new Date(
+    Date.now() - RECENT_WINDOW_HOURS * 60 * 60 * 1000,
+  ).toISOString();
+
   const { data: rows, error } = await supabaseServer
     .from("article_scores")
     .select(
@@ -56,6 +66,7 @@ export async function getTimelineArticles(
     `,
     )
     .eq("user_id", userId)
+    .gte("article.fetched_at", cutoff)
     .order("final_score", { ascending: false })
     .order("computed_at", { ascending: false })
     .limit(limit);
