@@ -1,3 +1,5 @@
+import { INTEREST_CATEGORIES } from "./onboarding-data";
+
 export function sortByFinalScore<T extends { final_score: number; fetched_at: string }>(
   articles: T[],
 ): T[] {
@@ -5,6 +7,44 @@ export function sortByFinalScore<T extends { final_score: number; fetched_at: st
     if (b.final_score !== a.final_score) return b.final_score - a.final_score;
     return b.fetched_at.localeCompare(a.fetched_at);
   });
+}
+
+// matched_topic（興味トピック）→ 所属グループ名 の対応表。
+const TOPIC_TO_GROUP = new Map<string, string>(
+  INTEREST_CATEGORIES.flatMap((g) => g.topics.map((t) => [t, g.group] as const)),
+);
+
+const NO_GROUP = "その他";
+
+// 記事のタグから所属グループを引く。未タグ・未知トピックは「その他」。
+export function groupOfTopic(topic: string | null): string {
+  if (!topic) return NO_GROUP;
+  return TOPIC_TO_GROUP.get(topic) ?? NO_GROUP;
+}
+
+// T6: 興味グループ単位で均等に並べ替える。
+// 入力は final_score 降順を前提。グループごとのキューを作り、各ラウンドで
+// 「先頭の点数が高いグループ順」に1件ずつ取り出す（＝高得点は上に残しつつ、
+// 特定グループがフィードを埋め尽くさないようにする）。
+export function balanceByGroup<
+  T extends { final_score: number; matched_topic: string | null },
+>(articles: T[]): T[] {
+  const buckets = new Map<string, T[]>();
+  for (const a of articles) {
+    const g = groupOfTopic(a.matched_topic);
+    const arr = buckets.get(g);
+    if (arr) arr.push(a);
+    else buckets.set(g, [a]);
+  }
+
+  const result: T[] = [];
+  while (result.length < articles.length) {
+    const heads = [...buckets.values()]
+      .filter((q) => q.length > 0)
+      .sort((a, b) => b[0].final_score - a[0].final_score);
+    for (const q of heads) result.push(q.shift()!);
+  }
+  return result;
 }
 
 export function mergeLikedFlag<T extends { id: string }>(

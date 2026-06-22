@@ -8,6 +8,14 @@ const SCORING_SCHEMA = z.object({
   title_ja: z.string(),
   summary: z.string(),
   score_reason: z.string(),
+  // "なし"・空文字は「該当カテゴリなし」として null に正規化する（T6）
+  matched_topic: z
+    .string()
+    .optional()
+    .transform((t) => {
+      const v = (t ?? "").trim();
+      return v === "" || v === "なし" ? null : v;
+    }),
 });
 
 // ひらがな・カタカナ・漢字を含むか（= 日本語タイトルとみなす）

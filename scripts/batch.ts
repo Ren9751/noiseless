@@ -1,6 +1,7 @@
 import { supabase } from "./lib/supabase";
 import { dedupeByUrl } from "./lib/dedup";
 import { buildScoringText } from "./lib/initial-batch-utils";
+import { insertScoredArticle } from "./lib/persist-scored";
 import { scoreArticle } from "./lib/scoring";
 import { fetchHatena } from "./fetchers/hatena";
 import { fetchHackerNews } from "./fetchers/hackernews";
@@ -14,6 +15,10 @@ import type {
 } from "./lib/types";
 
 const SCORE_THRESHOLD = 6;
+
+// T13: 「毎日読む分が必ずある」ように、1バッチで最低この件数は保存する。
+// 閾値を超えた記事がこれに満たない日だけ、閾値未満から点数順に補充する。
+const MIN_DAILY = 15;
 
 // T1: 取得から何日より古い記事を消すか。表示は直近48時間なので、数日ぶんの
 // バッファを持たせて 3 日。いいね済み（ブックマーク）の記事は対象外で残す。
@@ -92,8 +97,8 @@ async function main() {
   const withBody: ArticleWithBody[] = newEntries.map(attachBody);
   console.log(`${withBody.length} entries ready for scoring`);
 
-  // 4. スコアリング (閾値未満は捨てる)
-  const scored: ScoredArticle[] = [];
+  // 4. スコアリング。全件の点数を保持し、後で「閾値以上＋最低件数」を選ぶ。
+  const allScored: ScoredArticle[] = [];
   for (const entry of withBody) {
     try {
       const scoring = await scoreArticle(entry, {
@@ -101,48 +106,29 @@ async function main() {
         special_rules: profile.special_rules,
         it_level: profile.it_level ?? null,
       });
-      if (scoring.prompt_score >= SCORE_THRESHOLD) {
-        scored.push({ ...entry, scoring });
-      }
+      allScored.push({ ...entry, scoring });
     } catch (e) {
       console.error(`scoring failed for ${entry.url}:`, e);
     }
   }
-  console.log(`${scored.length} entries scored above threshold`);
 
-  // 5. DB 書き込み (articles を upsert、article_scores を insert)
+  // 閾値以上を採用。T13: それが MIN_DAILY に満たない時だけ、閾値未満から
+  // 点数の高い順に補充して下限を満たす（採点が薄い日のフォールバック）。
+  const above = allScored.filter((a) => a.scoring.prompt_score >= SCORE_THRESHOLD);
+  let scored: ScoredArticle[] = above;
+  if (above.length < MIN_DAILY) {
+    const below = allScored
+      .filter((a) => a.scoring.prompt_score < SCORE_THRESHOLD)
+      .sort((a, b) => b.scoring.prompt_score - a.scoring.prompt_score);
+    scored = [...above, ...below.slice(0, MIN_DAILY - above.length)];
+  }
+  console.log(
+    `${above.length} above threshold; ${scored.length} selected (min ${MIN_DAILY})`,
+  );
+
+  // 5. DB 書き込み（articles + article_scores）。保存は両バッチ共通ヘルパに集約。
   for (const article of scored) {
-    const { data: inserted, error: insErr } = await supabase
-      .from("articles")
-      .insert({
-        source_id: article.source_id,
-        url: article.url,
-        title: article.title,
-        body_excerpt: article.body_excerpt,
-        summary: article.scoring.summary,
-        raw_metadata: article.raw_metadata,
-        published_at: article.published_at,
-        image_url: article.image_url ?? null,
-      })
-      .select("id")
-      .single();
-    if (insErr) {
-      console.error(`article insert failed: ${article.url}`, insErr);
-      continue;
-    }
-    const { error: scoreErr } = await supabase.from("article_scores").insert({
-      article_id: inserted.id,
-      user_id: userId,
-      prompt_score: article.scoring.prompt_score,
-      similarity_score: 0,
-      final_score: article.scoring.prompt_score,
-      score_reason: article.scoring.score_reason,
-      title_ja: article.scoring.title_ja,
-      is_serendipity: false,
-    });
-    if (scoreErr) {
-      console.error(`article_scores insert failed: ${article.url}`, scoreErr);
-    }
+    await insertScoredArticle(userId, article);
   }
 
   // 6. 古い記事の掃除（T1）。いいね済みは残す。

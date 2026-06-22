@@ -32,6 +32,8 @@ export interface ScoringResult {
   title_ja: string;
   summary: string;
   score_reason: string;
+  // T6: 最もマッチした興味トピック（該当なしは null）。均等化のタグ。
+  matched_topic: string | null;
 }
 
 // DB 書き込み用にまとめた最終形

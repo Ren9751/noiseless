@@ -1,5 +1,6 @@
 import "server-only";
 import { supabaseServer } from "./supabase-server";
+import { balanceByGroup } from "./article-utils";
 
 export { sortByFinalScore, mergeLikedFlag } from "./article-utils";
 
@@ -18,6 +19,7 @@ export interface TimelineArticle {
   score_reason: string | null;
   prompt_score: number;
   final_score: number;
+  matched_topic: string | null;
   source_kind: string;
   source_name: string | null;
   image_url: string | null;
@@ -53,6 +55,7 @@ export async function getTimelineArticles(
       final_score,
       score_reason,
       title_ja,
+      matched_topic,
       article:articles!inner (
         id,
         url,
@@ -83,7 +86,7 @@ export async function getTimelineArticles(
     );
   const likedIds = new Set((likes ?? []).map((l) => l.article_id as string));
 
-  return (rows ?? []).map((r): TimelineArticle => {
+  const articles = (rows ?? []).map((r): TimelineArticle => {
     const article = r.article as unknown as ArticleRow;
     return {
       id: article.id,
@@ -94,6 +97,7 @@ export async function getTimelineArticles(
       score_reason: r.score_reason,
       prompt_score: r.prompt_score,
       final_score: r.final_score,
+      matched_topic: (r as { matched_topic: string | null }).matched_topic,
       source_kind: article.source.kind,
       source_name:
         (article.source.config as { name?: string } | null)?.name ?? null,
@@ -103,4 +107,7 @@ export async function getTimelineArticles(
       liked: likedIds.has(article.id),
     };
   });
+
+  // T6: 興味グループ単位で均等になるよう並べ替える（特定カテゴリの埋め尽くし防止）。
+  return balanceByGroup(articles);
 }

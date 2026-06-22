@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { dedupeByUrl } from "./dedup";
+import { insertScoredArticle } from "./persist-scored";
 import { scoreArticle } from "./scoring";
 import { fetchHatena } from "../fetchers/hatena";
 import { fetchHackerNews } from "../fetchers/hackernews";
@@ -117,37 +118,7 @@ export async function runInitialBatch({
   console.log(`[initial-batch] willSave=${top.length}`);
 
   for (const article of top) {
-    const { data: inserted, error: insErr } = await supabase
-      .from("articles")
-      .insert({
-        source_id: article.source_id,
-        url: article.url,
-        title: article.title,
-        body_excerpt: article.body_excerpt,
-        summary: article.scoring.summary,
-        raw_metadata: article.raw_metadata,
-        published_at: article.published_at,
-        image_url: article.image_url ?? null,
-      })
-      .select("id")
-      .single();
-    if (insErr) {
-      console.error(`initial article insert failed: ${article.url}`, insErr);
-      continue;
-    }
-    const { error: scoreErr } = await supabase.from("article_scores").insert({
-      article_id: inserted.id,
-      user_id: userId,
-      prompt_score: article.scoring.prompt_score,
-      similarity_score: 0,
-      final_score: article.scoring.prompt_score,
-      score_reason: article.scoring.score_reason,
-      title_ja: article.scoring.title_ja,
-      is_serendipity: false,
-    });
-    if (scoreErr) {
-      console.error(`initial article_scores insert failed: ${article.url}`, scoreErr);
-    }
+    await insertScoredArticle(userId, article);
   }
 
   return top.length;
