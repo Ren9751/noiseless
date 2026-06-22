@@ -9,7 +9,7 @@ export function Nav() {
 
   return (
     <nav className="border-b sticky top-0 bg-background z-10">
-      <div className="max-w-2xl mx-auto px-4 h-12 flex items-center justify-between">
+      <div className="max-w-3xl mx-auto px-4 h-12 flex items-center justify-between">
         <Link href="/" className="font-semibold tracking-tight">
           noiseless
         </Link>

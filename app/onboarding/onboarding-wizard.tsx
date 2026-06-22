@@ -49,7 +49,7 @@ export function OnboardingWizard() {
   }
 
   return (
-    <main className="max-w-2xl mx-auto p-4 flex flex-col gap-6">
+    <main className="max-w-3xl mx-auto p-4 flex flex-col gap-6">
       <div className="text-sm text-muted-foreground">ステップ {step} / 2</div>
 
       {step === 1 && (

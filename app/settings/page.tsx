@@ -8,7 +8,7 @@ export default async function SettingsPage() {
   const profile = await getProfile(FIXED_USER_ID);
 
   return (
-    <main className="max-w-2xl mx-auto p-4 flex flex-col gap-8">
+    <main className="max-w-3xl mx-auto p-4 flex flex-col gap-8">
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">興味分野</h2>
         <p className="text-sm text-muted-foreground">

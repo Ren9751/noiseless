@@ -28,7 +28,7 @@ export function PreparingFeed() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-8 text-center flex flex-col items-center gap-4">
+    <div className="max-w-3xl mx-auto p-8 text-center flex flex-col items-center gap-4">
       {!exhausted ? (
         <>
           <div className="h-6 w-6 rounded-full border-2 border-muted-foreground border-t-transparent animate-spin" />

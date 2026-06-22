@@ -36,6 +36,7 @@ async function main() {
     { user_id: user.id, kind: "rss", config: { name: "The Markup", url: "https://themarkup.org/feeds/rss.xml" }, enabled: true },
     { user_id: user.id, kind: "rss", config: { name: "MIT Tech Review", url: "https://www.technologyreview.com/feed/" }, enabled: true },
     { user_id: user.id, kind: "rss", config: { name: "Ars Technica", url: "https://feeds.arstechnica.com/arstechnica/index" }, enabled: true },
+    { user_id: user.id, kind: "rss", config: { name: "WIRED Japan", url: "https://wired.jp/feed/rss" }, enabled: true },
   ];
   // 既存と重複しないよう、kind 単位で upsert する代わりに、まず削除して入れ直す
   await supabase.from("sources").delete().eq("user_id", user.id);

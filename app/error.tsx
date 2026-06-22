@@ -8,7 +8,7 @@ export default function Error({
   reset: () => void;
 }) {
   return (
-    <div className="max-w-2xl mx-auto p-8 flex flex-col gap-4 text-center">
+    <div className="max-w-3xl mx-auto p-8 flex flex-col gap-4 text-center">
       <h2 className="text-lg font-semibold">エラーが発生しました</h2>
       <p className="text-sm text-muted-foreground break-words">{error.message}</p>
       <button
