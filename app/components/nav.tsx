@@ -13,12 +13,14 @@ export function Nav() {
         <Link href="/" className="font-semibold tracking-tight">
           noiseless
         </Link>
-        <Link
-          href="/settings"
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
-          設定
-        </Link>
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <Link href="/likes" className="hover:text-foreground">
+            いいね
+          </Link>
+          <Link href="/settings" className="hover:text-foreground">
+            設定
+          </Link>
+        </div>
       </div>
     </nav>
   );

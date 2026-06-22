@@ -22,6 +22,7 @@ export async function toggleLike(articleId: string, currentlyLiked: boolean): Pr
     if (error && error.code !== "23505") throw error;
   }
   revalidatePath("/");
+  revalidatePath("/likes");
 }
 
 export async function updateInterests(interests: Interest[]): Promise<void> {
