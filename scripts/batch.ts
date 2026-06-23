@@ -2,6 +2,7 @@ import { supabase } from "./lib/supabase";
 import { dedupeByUrl } from "./lib/dedup";
 import { buildScoringText } from "./lib/initial-batch-utils";
 import { insertScoredArticle } from "./lib/persist-scored";
+import { fetchLikedTitles } from "./lib/signal-titles";
 import { scoreArticle } from "./lib/scoring";
 import { fetchHatena } from "./fetchers/hatena";
 import { fetchHackerNews } from "./fetchers/hackernews";
@@ -98,6 +99,10 @@ async function main() {
   console.log(`${withBody.length} entries ready for scoring`);
 
   // 4. スコアリング。全件の点数を保持し、後で「閾値以上＋最低件数」を選ぶ。
+  //    P6①: いいねした記事タイトルを「好んだ例」として採点プロンプトに注入する。
+  const likedTitles = await fetchLikedTitles(userId);
+  console.log(`${likedTitles.length} liked titles injected into scoring`);
+
   const allScored: ScoredArticle[] = [];
   for (const entry of withBody) {
     try {
@@ -105,6 +110,7 @@ async function main() {
         interests: profile.interests,
         special_rules: profile.special_rules,
         it_level: profile.it_level ?? null,
+        liked_titles: likedTitles,
       });
       allScored.push({ ...entry, scoring });
     } catch (e) {

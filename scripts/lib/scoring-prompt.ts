@@ -4,12 +4,25 @@ export interface ScoringProfile {
   interests: Array<{ topic: string; weight: number }>;
   special_rules: string;
   it_level: number | null;
+  // P6①: いいね学習。ユーザーが実際にいいねした記事タイトル（新しい順）。
+  // 宣言した興味分野（interests）に加え、行動として現れた好みを採点に反映する。
+  liked_titles?: string[];
 }
 
 export function buildPrompt(profile: ScoringProfile): string {
   const interestsList = profile.interests
     .map((i) => `- ${i.topic} (重要度 ${i.weight}/10)`)
     .join("\n");
+
+  // いいねが溜まっている時だけ「好んだ例」を注入する（A方式＝タイトル直接列挙）。
+  const likedSection =
+    profile.liked_titles && profile.liked_titles.length > 0
+      ? `
+## 最近いいねした記事（ユーザーが実際に好んだ例）
+${profile.liked_titles.map((t) => `- ${t}`).join("\n")}
+↑ これらと傾向（テーマ・切り口・粒度）が近い記事は、興味分野の重要度に加えて +1〜2 する。
+`
+      : "";
 
   return `あなたは「自分専用ニュースタイムライン」のキュレーターです。
 記事を以下のユーザープロフィールに照らしてスコアリングし、日本語タイトルと X (旧Twitter) の投稿1個分の本文を生成してください。
@@ -19,7 +32,7 @@ ${interestsList}
 
 ## 特別ルール
 ${profile.special_rules || "（なし）"}
-
+${likedSection}
 ## スコアリング基準
 - 興味分野の重要度を基礎スコアとする (1-10)
 - 内容が薄い速報は -1

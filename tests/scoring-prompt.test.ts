@@ -24,4 +24,23 @@ describe("buildPrompt", () => {
     const p = buildPrompt({ ...base, it_level: null });
     expect(p).toContain("普段からIT記事を読む人");
   });
+
+  it("いいねがある時だけ「最近いいねした記事」を注入する（P6①）", () => {
+    const without = buildPrompt({ ...base, it_level: 3 });
+    expect(without).not.toContain("最近いいねした記事");
+
+    const withLikes = buildPrompt({
+      ...base,
+      it_level: 3,
+      liked_titles: ["量子コンピュータの誤り訂正が前進", "RAGの再ランク手法を比較"],
+    });
+    expect(withLikes).toContain("最近いいねした記事");
+    expect(withLikes).toContain("量子コンピュータの誤り訂正が前進");
+    expect(withLikes).toContain("RAGの再ランク手法を比較");
+  });
+
+  it("liked_titles が空配列なら注入しない", () => {
+    const p = buildPrompt({ ...base, it_level: 3, liked_titles: [] });
+    expect(p).not.toContain("最近いいねした記事");
+  });
 });
