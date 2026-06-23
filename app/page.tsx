@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getTimelineArticles } from "./lib/articles";
 import { getProfile } from "./lib/profile";
 import { isOnboarded } from "./lib/onboarding-gate";
-import { ArticleCard } from "./components/article-card";
+import { DismissibleArticle } from "./components/dismissible-article";
 import { PreparingFeed } from "./components/preparing-feed";
 
 const FIXED_USER_ID = "00000000-0000-0000-0000-000000000001";
@@ -39,7 +39,7 @@ export default async function TimelinePage() {
         <p className="text-sm font-medium text-muted-foreground">{today}</p>
       </header>
       {articles.map((a) => (
-        <ArticleCard key={a.id} article={a} />
+        <DismissibleArticle key={a.id} article={a} />
       ))}
       <div className="text-center text-xs text-muted-foreground py-8">
         ── 今日は以上です ──

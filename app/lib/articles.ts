@@ -106,19 +106,28 @@ export async function getTimelineArticles(
     .limit(limit);
   if (error) throw error;
   const rows = (data ?? []) as unknown as ScoreRow[];
+  if (rows.length === 0) return [];
 
   const articleIds = rows.map((r) => r.article.id);
-  const { data: likes } = await supabaseServer
-    .from("likes")
-    .select("article_id")
-    .eq("user_id", userId)
-    .in(
-      "article_id",
-      articleIds.length > 0 ? articleIds : ["00000000-0000-0000-0000-000000000000"],
-    );
+  const [{ data: likes }, { data: dislikes }] = await Promise.all([
+    supabaseServer
+      .from("likes")
+      .select("article_id")
+      .eq("user_id", userId)
+      .in("article_id", articleIds),
+    // T10: 「興味なし」にした記事はタイムラインから除外する。
+    supabaseServer
+      .from("dislikes")
+      .select("article_id")
+      .eq("user_id", userId)
+      .in("article_id", articleIds),
+  ]);
   const likedIds = new Set((likes ?? []).map((l) => l.article_id as string));
+  const dislikedIds = new Set((dislikes ?? []).map((d) => d.article_id as string));
 
-  const articles = rows.map((r) => toTimelineArticle(r, likedIds.has(r.article.id)));
+  const articles = rows
+    .filter((r) => !dislikedIds.has(r.article.id))
+    .map((r) => toTimelineArticle(r, likedIds.has(r.article.id)));
 
   // T6: 興味グループ単位で均等になるよう並べ替える（特定カテゴリの埋め尽くし防止）。
   return balanceByGroup(articles);

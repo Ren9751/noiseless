@@ -7,6 +7,8 @@ export interface ScoringProfile {
   // P6①: いいね学習。ユーザーが実際にいいねした記事タイトル（新しい順）。
   // 宣言した興味分野（interests）に加え、行動として現れた好みを採点に反映する。
   liked_titles?: string[];
+  // T10: 「興味なし」にした記事タイトル（新しい順）。避けるべき傾向のネガティブシグナル。
+  disliked_titles?: string[];
 }
 
 export function buildPrompt(profile: ScoringProfile): string {
@@ -14,15 +16,28 @@ export function buildPrompt(profile: ScoringProfile): string {
     .map((i) => `- ${i.topic} (重要度 ${i.weight}/10)`)
     .join("\n");
 
-  // いいねが溜まっている時だけ「好んだ例」を注入する（A方式＝タイトル直接列挙）。
-  const likedSection =
-    profile.liked_titles && profile.liked_titles.length > 0
+  // タイトルが溜まっている時だけ、見出し＋箇条書き＋採点指示のセクションを差し込む。
+  // 改行の作法を1か所にまとめ、好み（いいね）と回避（興味なし）の両方で使い回す。
+  const titleSection = (titles: string[] | undefined, heading: string, guidance: string) =>
+    titles && titles.length > 0
       ? `
-## 最近いいねした記事（ユーザーが実際に好んだ例）
-${profile.liked_titles.map((t) => `- ${t}`).join("\n")}
-↑ これらと傾向（テーマ・切り口・粒度）が近い記事は、興味分野の重要度に加えて +1〜2 する。
+## ${heading}
+${titles.map((t) => `- ${t}`).join("\n")}
+${guidance}
 `
       : "";
+
+  // いいね＝好んだ例（A方式＝タイトル直接列挙）、「興味なし」＝避けた例（ネガティブシグナル）。
+  const likedSection = titleSection(
+    profile.liked_titles,
+    "最近いいねした記事（ユーザーが実際に好んだ例）",
+    "↑ これらと傾向（テーマ・切り口・粒度）が近い記事は、興味分野の重要度に加えて +1〜2 する。",
+  );
+  const dislikedSection = titleSection(
+    profile.disliked_titles,
+    "最近「興味なし」にした記事（ユーザーが避けた例）",
+    "↑ これらと傾向が近い記事は -1〜2 する。ただし興味分野の重要度が高いものまで巻き込まないこと。",
+  );
 
   return `あなたは「自分専用ニュースタイムライン」のキュレーターです。
 記事を以下のユーザープロフィールに照らしてスコアリングし、日本語タイトルと X (旧Twitter) の投稿1個分の本文を生成してください。
@@ -32,7 +47,7 @@ ${interestsList}
 
 ## 特別ルール
 ${profile.special_rules || "（なし）"}
-${likedSection}
+${likedSection}${dislikedSection}
 ## スコアリング基準
 - 興味分野の重要度を基礎スコアとする (1-10)
 - 内容が薄い速報は -1

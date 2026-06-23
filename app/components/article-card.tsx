@@ -1,9 +1,17 @@
+import type { ReactNode } from "react";
 import { Card } from "@/components/ui/card";
 import type { TimelineArticle } from "@/app/lib/articles";
 import { relativeTime, sourceLabel } from "@/app/lib/article-utils";
 import { LikeButton } from "./like-button";
 
-export function ArticleCard({ article }: { article: TimelineArticle }) {
+// dislikeControl: タイムラインでだけ渡す「興味なし」ボタン。いいね一覧では渡さない。
+export function ArticleCard({
+  article,
+  dislikeControl,
+}: {
+  article: TimelineArticle;
+  dislikeControl?: ReactNode;
+}) {
   // RSS はフィード名（GIGAZINE 等）、それ以外は種別ラベル
   const label = article.source_name ?? sourceLabel(article.source_kind);
 
@@ -50,7 +58,10 @@ export function ArticleCard({ article }: { article: TimelineArticle }) {
       </div>
 
       <div className="flex items-center justify-between pt-1">
-        <LikeButton articleId={article.id} initiallyLiked={article.liked} />
+        <div className="flex items-center gap-1">
+          <LikeButton articleId={article.id} initiallyLiked={article.liked} />
+          {dislikeControl}
+        </div>
         <a
           href={article.url}
           target="_blank"

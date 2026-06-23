@@ -25,6 +25,26 @@ export async function toggleLike(articleId: string, currentlyLiked: boolean): Pr
   revalidatePath("/likes");
 }
 
+// T10: 「興味なし」ネガティブシグナル。like と対称だが revalidate しないのが肝。
+// タイムラインからの除外は次回ロード時に getTimelineArticles が行うため、ここで
+// revalidate するとクライアント側の「取り消す」スタブが即消えて Undo できなくなる。
+// ⚠️ ここに revalidatePath を足さないこと（DismissibleArticle の Undo が壊れる）。
+export async function toggleDislike(articleId: string, currentlyDisliked: boolean): Promise<void> {
+  if (currentlyDisliked) {
+    const { error } = await supabaseServer
+      .from("dislikes")
+      .delete()
+      .eq("user_id", FIXED_USER_ID)
+      .eq("article_id", articleId);
+    if (error) throw error;
+  } else {
+    const { error } = await supabaseServer
+      .from("dislikes")
+      .insert({ user_id: FIXED_USER_ID, article_id: articleId });
+    if (error && error.code !== "23505") throw error;
+  }
+}
+
 export async function updateInterests(interests: Interest[]): Promise<void> {
   for (const i of interests) {
     if (typeof i.topic !== "string" || i.topic.trim() === "") {

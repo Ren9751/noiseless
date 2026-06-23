@@ -43,4 +43,23 @@ describe("buildPrompt", () => {
     const p = buildPrompt({ ...base, it_level: 3, liked_titles: [] });
     expect(p).not.toContain("最近いいねした記事");
   });
+
+  it("disliked_titles がある時だけ「興味なし」例を注入する（T10）", () => {
+    const without = buildPrompt({ ...base, it_level: 3 });
+    expect(without).not.toContain("興味なし」にした記事");
+
+    const withDislikes = buildPrompt({
+      ...base,
+      it_level: 3,
+      disliked_titles: ["芸能ゴシップまとめ", "今日の星座占いランキング"],
+    });
+    expect(withDislikes).toContain("興味なし」にした記事");
+    expect(withDislikes).toContain("芸能ゴシップまとめ");
+    expect(withDislikes).toContain("今日の星座占いランキング");
+  });
+
+  it("disliked_titles が空配列なら注入しない", () => {
+    const p = buildPrompt({ ...base, it_level: 3, disliked_titles: [] });
+    expect(p).not.toContain("興味なし」にした記事");
+  });
 });
